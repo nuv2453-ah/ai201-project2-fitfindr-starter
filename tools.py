@@ -97,12 +97,15 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
             f"specific named pieces from their wardrobe. Be specific and casual."
         )
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=300,
-    )
-    return response.choices[0].message.content or "Could not generate outfit suggestion. Please try again."
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=300,
+        )
+        return response.choices[0].message.content or "Could not generate outfit suggestion. Please try again."
+    except Exception:
+        return "Could not generate outfit suggestion. Please try again."
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -126,10 +129,13 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         f"not a product description. No hashtags."
     )
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=150,
-        temperature=0.9,
-    )
-    return response.choices[0].message.content or "Could not generate fit card. Please try again."
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=150,
+            temperature=0.9,
+        )
+        return response.choices[0].message.content or "Could not generate fit card. Please try again."
+    except Exception:
+        return "Could not generate fit card. Please try again."

@@ -58,3 +58,59 @@ No data is re-entered between steps. The same dict object flows through all thre
 | `create_fit_card` | Outfit string is empty or whitespace | Returns: "Cannot generate a fit card without an outfit suggestion. Please retry your search." No exception raised. |
 
 **Concrete example from testing:**
+
+---
+
+## Testing Example
+
+To verify the agent end-to-end locally:
+
+```python
+from agent import run_agent
+from utils.data_loader import get_example_wardrobe, get_empty_wardrobe
+
+# Happy path — should return a fit card
+session = run_agent("vintage graphic tee under $30", get_example_wardrobe())
+assert session["error"] is None
+assert session["fit_card"] is not None
+print("fit_card:", session["fit_card"])
+
+# No-results path — should set error and skip LLM calls
+session2 = run_agent("designer ballgown size XXS under $5", get_example_wardrobe())
+assert session2["error"] is not None
+assert session2["outfit_suggestion"] is None
+print("error:", session2["error"])
+
+# Empty wardrobe — suggest_outfit should return general styling advice, not crash
+session3 = run_agent("vintage graphic tee under $30", get_empty_wardrobe())
+assert session3["outfit_suggestion"] is not None
+print("general advice:", session3["outfit_suggestion"])
+```
+
+Run from the project root with a valid `GROQ_API_KEY` in `.env`.
+
+---
+
+## Spec Reflection
+
+The final implementation matches the planning.md spec closely. The three-tool structure, session dict pattern, and early-exit branch on empty search results were all designed upfront and carried through without major changes.
+
+One deviation: the original spec noted that `suggest_outfit` should return a fallback string if the LLM call fails, but the initial implementation only handled the empty-wardrobe case — the actual API call had no `try/except`. This was caught during review and fixed by wrapping both LLM calls in `try/except Exception` blocks that return the fallback strings on any API-level failure (network timeout, rate limit, invalid response). The planning.md error handling table has been updated to reflect this.
+
+Everything else — the regex query parser, the keyword scoring in `search_listings`, the temperature=0.9 on `create_fit_card`, and the three-panel Gradio layout — matched the spec as written.
+
+---
+
+## AI Usage
+
+Claude (claude.ai) was used throughout this project in the following specific ways:
+
+- **Tool implementation:** Provided the Tool 1–3 specs from planning.md to Claude and asked it to generate the function bodies. Reviewed each output against the spec before accepting — caught one case where the keyword scoring didn't include `style_tags` and prompted a correction.
+
+- **Planning loop:** Gave Claude the Planning Loop, State Management, and Architecture sections from planning.md and asked it to implement `run_agent()`. Verified the generated code branched correctly on empty results and stored values in the session dict at each step.
+
+- **README drafting:** Used Claude to draft sections of this README, then edited for accuracy and completeness.
+
+- **Bug fix:** After project review flagged missing `try/except` around LLM calls, used Claude to generate the corrected code blocks and verified the output matched the existing function structure before applying.
+
+All AI-generated code was read, tested, and understood before being committed. No output was accepted without manual verification against the spec.
